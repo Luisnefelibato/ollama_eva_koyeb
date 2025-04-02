@@ -1,12 +1,17 @@
-FROM ollama/ollama:latest
+FROM debian:bullseye
 
-EXPOSE 11434
+# Instalar dependencias necesarias
+RUN apt-get update && apt-get install -y curl socat gnupg
+
+# Instalar Ollama (desde el script oficial)
+RUN curl -fsSL https://ollama.com/install.sh | sh
 
 # Copiar el script de entrada
 COPY entrypoint.sh /entrypoint.sh
-
-# Dar permisos de ejecución al script
 RUN chmod +x /entrypoint.sh
 
-# Usar el script como punto de entrada
+# Exponer el puerto que usa Ollama
+EXPOSE 11434
+
+# Ejecutar el script
 ENTRYPOINT ["/entrypoint.sh"]

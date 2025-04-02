@@ -1,31 +1,33 @@
 #!/bin/bash
 
-# Iniciar el servidor de Ollama en segundo plano
+# Iniciar el servidor Ollama en segundo plano
 ollama serve &
 
-# Esperar a que el servidor esté listo (hasta 30 segundos)
+# Redirigir a 0.0.0.0 para que Koyeb lo detecte
+socat TCP-LISTEN:11434,fork,reuseaddr TCP:localhost:11434 &
+
+# Esperar a que Ollama esté listo
 for i in {1..30}; do
     if curl -s http://localhost:11434/api/tags > /dev/null; then
         echo "Servidor de Ollama está listo."
         break
     fi
-    echo "Esperando a que el servidor de Ollama se inicie... ($i/30)"
+    echo "Esperando a que Ollama se inicie... ($i/30)"
     sleep 1
 done
 
-# Verificar si el servidor está realmente listo
 if ! curl -s http://localhost:11434/api/tags > /dev/null; then
-    echo "Error: No se pudo conectar al servidor de Ollama después de 30 segundos."
+    echo "Error: No se pudo conectar al servidor de Ollama."
     exit 1
 fi
 
-# Verificar si el modelo llama3:8b está instalado
+# Descargar modelo si no está
 if ! ollama list | grep -q "llama3:8b"; then
-    echo "Modelo llama3:8b no encontrado, descargando..."
+    echo "Descargando modelo llama3:8b..."
     ollama pull llama3:8b
 else
-    echo "Modelo llama3:8b ya está instalado."
+    echo "Modelo ya presente."
 fi
 
-# Mantener el contenedor corriendo
+# Mantener el contenedor vivo
 wait
