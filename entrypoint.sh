@@ -1,36 +1,25 @@
 #!/bin/bash
 
-# Ejecutar Ollama escuchando explícitamente en 127.0.0.1 (por defecto) en segundo plano
+# Iniciar Ollama
 ollama serve &
 
-# Esperar a que el puerto esté libre antes de redirigir
-sleep 3
-
-# Redirigir puerto 11434 desde 0.0.0.0 hacia localhost (para que Koyeb lo detecte)
-socat TCP-LISTEN:11434,fork,reuseaddr TCP:127.0.0.1:11434 &
+# Servidor simple para health check en puerto 8080
+while true; do echo -e 'HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK' | nc -l -p 8080; done &
 
 # Esperar a que Ollama esté listo
 for i in {1..30}; do
     if curl -s http://localhost:11434/api/tags > /dev/null; then
-        echo "Servidor de Ollama está listo."
+        echo "Ollama listo."
         break
     fi
-    echo "Esperando a que Ollama se inicie... ($i/30)"
+    echo "Esperando... ($i/30)"
     sleep 1
 done
 
-if ! curl -s http://localhost:11434/api/tags > /dev/null; then
-    echo "Error: No se pudo conectar al servidor de Ollama."
-    exit 1
-fi
-
 # Descargar modelo si no está
 if ! ollama list | grep -q "llama3:8b"; then
-    echo "Descargando modelo llama3:8b..."
+    echo "Descargando modelo..."
     ollama pull llama3:8b
-else
-    echo "Modelo ya presente."
 fi
 
-# Mantener contenedor activo
 wait
